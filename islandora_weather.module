@@ -1,0 +1,49 @@
+<?php
+
+function islandora_weather_block_info() {
+  $blocks = array();
+  $blocks['islandora_weather'] = array(
+    'info' => t('Islandora Weather'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+function islandora_weather_block_view($delta) {
+  $block = array();
+  switch ($delta) {
+    case 'islandora_weather':
+      $block['subject'] = t('Location Weather');
+      $block['content'] = islandora_weather_render_weather();
+      break;
+  }
+  return $block;
+}
+
+function islandora_weather_render_weather() {
+  if (arg(0) == 'islandora' && arg(1) == 'object') {
+    $object = islandora_object_load(arg(2));
+    if (isset($object['MODS']->content)) {
+      $output = t('Unavailable');
+      $doc = new DOMDocument();
+      $doc->loadXML($object['MODS']->content);
+
+      $xpath = new DOMXPath($doc);
+
+      $city = $xpath->query("//mods:city")->item(0);
+      $country = $xpath->query("//mods:country")->item(0);
+      if ($city->nodeValue && $country->nodeValue) {
+        $location = $city->nodeValue . ',' . $country->nodeValue;
+        $url = 'http://api.openweathermap.org/data/2.5/weather?q=' . $location;
+
+        $api_response = drupal_http_request($url);
+
+        $response = json_decode($api_response->data);
+
+        $output = t('Conditions in ') . check_plain($city->nodeValue) . ' : ' . $response->weather[0]->description;
+      }
+
+      return array('#markup' => $output);
+    }
+  }
+}

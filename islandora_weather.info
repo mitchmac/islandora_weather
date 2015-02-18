@@ -1,0 +1,4 @@
+name = Islandora Weather
+description = Show the current weather at a location defined in the MODS datastream
+core = 7.x
+dependencies[] = islandora
